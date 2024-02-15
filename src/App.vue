@@ -1,10 +1,11 @@
 
 <template>
-  <div class="card flex justify-center">
-      <Dropdown v-model="selectedCountry" :options="countries" filter optionLabel="name" placeholder="Select a Country" class="w-full md:w-[14rem]">
+<div class="px-6 flex h-[100vh] items-center justify-center">
+    <div class="lg:w-1/2 sm:w-2/3 w-full mx-auto border border-black p-10">
+        <div class="card flex justify-center">
+      <Dropdown v-model="selectedUnions" :options="places" filter optionLabel="name" placeholder="Select Your Union" class="w-full border border-green-800 mb-40">
           <template #value="slotProps">
               <div v-if="slotProps.value" class="flex items-center">
-                  <img :alt="slotProps.value.label" src="https://primefaces.org/cdn/primevue/images/flag/flag_placeholder.png" :class="`mr-2 flag flag-${slotProps.value.code.toLowerCase()}`" style="width: 20px; height: 13.4px" />
                   <div>{{ slotProps.value.name }}</div>
               </div>
               <span v-else>
@@ -13,28 +14,110 @@
           </template>
           <template #option="slotProps">
               <div class="flex items-center">
-                  <img :alt="slotProps.option.label" src="https://primefaces.org/cdn/primevue/images/flag/flag_placeholder.png" :class="`mr-2 flag flag-${slotProps.option.code.toLowerCase()}`" style="width: 20px; height: 13.4px" />
-                  <div>{{ slotProps.option.name }}</div>
+                  <div>{{ slotProps.option.name }} - ( {{ slotProps.option.bn_name }} )</div>
               </div>
           </template>
       </Dropdown>
   </div>
+
+  <div>
+    <h1 class="text-xl font-normal"> Selected Union: <span class="font-semibold">{{  selectedUnions.name }} - ( {{  selectedUnions.bn_name }} )</span></h1>
+    <h1 class="text-xl font-normal"> Selected Upazila: <span class="font-semibold">{{ selectedUpazila.name }} - ( {{ selectedUpazila.bn_name }} )</span></h1>
+    <h1 class="text-xl font-normal"> Selected District: <span class="font-semibold">{{ selectedDristrict.name }} - ( {{ selectedDristrict.bn_name }} )</span></h1>
+    <h1 class="text-xl font-normal"> Selected Divisions: <span class="font-semibold">{{ selectedDevision.name }} - ( {{ selectedDevision.bn_name }} )</span></h1>
+  </div>
+    </div>
+</div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import axios from 'axios';
+import { onMounted, ref, watch } from "vue";
 
-const selectedCountry = ref();
-const countries = ref([
-  { name: 'Australia', code: 'AU' },
-  { name: 'Brazil', code: 'BR' },
-  { name: 'China', code: 'CN' },
-  { name: 'Egypt', code: 'EG' },
-  { name: 'France', code: 'FR' },
-  { name: 'Germany', code: 'DE' },
-  { name: 'India', code: 'IN' },
-  { name: 'Japan', code: 'JP' },
-  { name: 'Spain', code: 'ES' },
-  { name: 'United States', code: 'US' }
-]);
+
+const places = ref([]);
+
+const selectedUnions = ref("")
+const selectedUpazila = ref("")
+const selectedDristrict = ref("")
+const selectedDevision = ref("")
+
+onMounted(async () => {
+      try {
+        const response = await axios.get('unions.json');
+        // Handle the response data here
+        // console.log(response.data[2].data);
+        places.value = response.data[2].data;
+      } catch (error) {
+        // Handle errors here
+        console.error('Error fetching data:', error);
+      }
+    });
+
+    watch(
+      () => selectedUnions.value,
+      async (newVal, oldVal) => {
+        // Introduce a delay of 300 milliseconds before executing the watch logic
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        try {
+          const response = await axios.get('upazilas.json');
+          // Handle the response data here
+          const filterUpazila = response.data[2].data.find((upaz) => upaz.id === newVal.upazilla_id);
+
+          selectedUpazila.value = filterUpazila;
+        } catch (error) {
+          // Handle errors here
+          console.error('Error fetching data:', error);
+        }
+      }
+    );
+
+    watch(
+      () => selectedUpazila.value,
+      async (newVal, oldVal) => {
+        // Introduce a delay of 300 milliseconds before executing the watch logic
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        
+        try {
+            const response = await axios.get('districts.json');
+            // Handle the response data here
+          const filterDistrict = response.data[2].data.find((dis) => dis.id == newVal.district_id);
+
+          selectedDristrict.value = filterDistrict;
+        } catch (error) {
+          // Handle errors here
+          console.error('Error fetching data:', error);
+        }
+      }
+    );
+
+    watch(
+      () => selectedDristrict.value,
+      async (newVal, oldVal) => {
+        // Introduce a delay of 300 milliseconds before executing the watch logic
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        
+        try {
+            const response = await axios.get('divisions.json');
+            // Handle the response data here
+          const filterDivision = response.data[2].data.find((div) => div.id == newVal.division_id);
+
+          selectedDevision.value = filterDivision;
+        } catch (error) {
+          // Handle errors here
+          console.error('Error fetching data:', error);
+        }
+      }
+    );
+
+
 </script>
+
+
+<style>
+input.p-dropdown-filter.p-inputtext.p-component {
+    padding: 10px 20px;
+    border: 1px solid #333;
+}
+</style>
